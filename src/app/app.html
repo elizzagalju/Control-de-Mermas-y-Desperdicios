@@ -1,0 +1,533 @@
+<div class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 sm:gap-8 px-4 sm:px-6 lg:px-8 py-3">
+      <button
+        type="button"
+        (click)="setActiveTab('dashboard')"
+        class="text-left text-base sm:text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 cursor-pointer"
+      >
+        Sistema Industrial
+      </button>
+
+      <nav class="flex items-center gap-4 sm:gap-6 overflow-x-auto" aria-label="Navegación principal">
+        <button
+          type="button"
+          (click)="setActiveTab('dashboard')"
+          [class]="
+            activeTab() === 'dashboard'
+              ? 'border-b-2 border-slate-900 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap shrink-0 cursor-pointer'
+              : 'border-b-2 border-transparent py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer'
+          "
+        >
+          Dashboard Operativo Scrap
+        </button>
+        <button
+          type="button"
+          (click)="setActiveTab('builder')"
+          [class]="
+            activeTab() === 'builder'
+              ? 'border-b-2 border-slate-900 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap shrink-0 cursor-pointer'
+              : 'border-b-2 border-transparent py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer'
+          "
+        >
+          Constructor de Módulos (IA)
+        </button>
+      </nav>
+
+      <div class="hidden sm:flex items-center shrink-0">
+        <button
+          type="button"
+          (click)="focusRegistrationForm()"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+        >
+          <mat-icon class="text-[16px]! h-4! w-4! leading-4!">add</mat-icon>
+          <span>Nueva Merma</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="reporte" class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8 py-8">
+    @if (activeTab() === 'dashboard') {
+    <div class="mb-6 flex flex-col gap-5 border-b border-slate-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 text-balance">
+          REPORTE DE SCRAP POR TURNO
+        </h1>
+        <p class="mt-1.5 text-sm text-slate-600">
+          Control operativo de desperdicio en kilogramos y costo financiero por turno y línea de producción.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+        <div>
+          <span class="text-xs text-slate-500">Peso total</span>
+          <p class="font-mono tabular-nums font-semibold text-slate-900">
+            {{ totalGlobalKg() | number: '1.1-1' }} kg
+          </p>
+        </div>
+        <div class="h-7 w-px bg-slate-200 hidden sm:block" aria-hidden="true"></div>
+        <div>
+          <span class="text-xs text-slate-500">Costo acumulado</span>
+          <p class="font-mono tabular-nums font-semibold text-slate-900">
+            {{ totalGlobalCosto() | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+          </p>
+        </div>
+        <div class="h-7 w-px bg-slate-200 hidden sm:block" aria-hidden="true"></div>
+        <div>
+          <span class="text-xs text-slate-500">Mayor impacto</span>
+          <p class="font-semibold text-slate-900">
+            Turno {{ highestCostShift().turno }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <section
+      id="registro-merma"
+      aria-labelledby="registro-heading"
+      class="mb-8 rounded-xl border border-slate-200 bg-white p-5 sm:p-6"
+    >
+      <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 id="registro-heading" class="text-base font-bold text-slate-900">
+            Registro de Merma y Desperdicios (Scrap)
+          </h2>
+          <p class="mt-0.5 text-xs text-slate-500">
+            Captura manual o digitaliza un formato físico de planta mediante fotografía.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <input
+            #photoFileInput
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            (change)="onPhotoSelected($event)"
+            class="hidden"
+            aria-label="Seleccionar foto de formato físico de scrap"
+          />
+          <button
+            type="button"
+            (click)="triggerPhotoUpload()"
+            [disabled]="isExtractingPhoto()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-60 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <mat-icon class="text-[16px]! h-4! w-4! leading-4!">
+              {{ isExtractingPhoto() ? 'hourglass_top' : 'photo_camera' }}
+            </mat-icon>
+            <span>
+              {{ isExtractingPhoto() ? 'Analizando formato...' : 'Subir Foto de Formato' }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      @if (isExtractingPhoto() || photoPreviewUrl() || extractionError() || extractionSuccessNote()) {
+        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 bg-slate-50 p-3.5">
+          <div class="flex items-center gap-3 min-w-0">
+            @if (photoPreviewUrl(); as preview) {
+              <img
+                [src]="preview"
+                alt="Vista previa del formato físico de scrap"
+                referrerpolicy="no-referrer"
+                class="h-12 w-12 rounded-md border border-slate-200 object-cover shrink-0"
+              />
+            }
+            <div class="min-w-0">
+              @if (isExtractingPhoto()) {
+                <p class="text-xs font-semibold text-slate-900">
+                  Extrayendo Turno, Línea, Kg y Costo del documento físico...
+                </p>
+                <p class="text-xs text-slate-500">
+                  Procesando imagen con Gemini para autocompletar el formulario.
+                </p>
+              } @else if (extractionError(); as errorMsg) {
+                <p class="text-xs font-semibold text-red-700">
+                  Error al leer el formato físico
+                </p>
+                <p class="text-xs text-red-600">{{ errorMsg }}</p>
+              } @else if (extractionSuccessNote(); as note) {
+                <p class="text-xs font-semibold text-emerald-800">
+                  Campos autocompletados desde la fotografía
+                </p>
+                <p class="text-xs text-slate-600 truncate">{{ note }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            @if (extractionSuccessNote() && !isExtractingPhoto()) {
+              <button
+                type="button"
+                (click)="submitRecord()"
+                class="inline-flex items-center gap-1 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <mat-icon class="text-[15px]! h-[15px]! w-[15px]! leading-[15px]!">check</mat-icon>
+                <span>Agregar directo a la tabla</span>
+              </button>
+            }
+            @if (!isExtractingPhoto()) {
+              <button
+                type="button"
+                (click)="clearPhotoExtraction()"
+                aria-label="Descartar imagen cargada"
+                class="rounded-md p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 cursor-pointer"
+              >
+                <mat-icon class="text-[18px]! h-[18px]! w-[18px]! leading-[18px]!">close</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <form [formGroup]="recordForm" (ngSubmit)="submitRecord()" class="mt-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-start">
+          <div class="lg:col-span-2">
+            <label for="form-turno" class="block text-xs font-semibold text-slate-700">
+              Turno
+            </label>
+            <select
+              id="form-turno"
+              formControlName="turno"
+              class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+            >
+              @for (shift of shifts; track shift) {
+                <option [value]="shift">{{ shift }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="form-linea" class="block text-xs font-semibold text-slate-700">
+              Línea de Producción
+            </label>
+            <select
+              #lineaSelectEl
+              id="form-linea"
+              formControlName="linea"
+              class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+            >
+              @for (line of productionLines; track line) {
+                <option [value]="line">{{ line }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="lg:col-span-3">
+            <label for="form-motivo" class="block text-xs font-semibold text-slate-700">
+              Tipo de Defecto / Motivo
+            </label>
+            <input
+              id="form-motivo"
+              type="text"
+              list="defectos-sugeridos"
+              formControlName="motivo"
+              placeholder="Ej. Rebaba / Exceso de material"
+              class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
+            />
+            <datalist id="defectos-sugeridos">
+              @for (reason of defectReasons; track reason) {
+                <option [value]="reason"></option>
+              }
+            </datalist>
+            @if (recordForm.controls.motivo.touched && recordForm.controls.motivo.invalid) {
+              <p class="mt-1 text-xs text-red-600">Indica el tipo de defecto o motivo.</p>
+            }
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="form-kg" class="block text-xs font-semibold text-slate-700">
+              Peso en Kg
+            </label>
+            <input
+              id="form-kg"
+              type="number"
+              step="0.1"
+              min="0.1"
+              formControlName="kg"
+              placeholder="0.0"
+              class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-mono tabular-nums text-slate-900 focus:border-slate-500 focus:outline-none"
+            />
+            @if (recordForm.controls.kg.touched && recordForm.controls.kg.invalid) {
+              <p class="mt-1 text-xs text-red-600">Peso mayor a 0.</p>
+            }
+          </div>
+
+          <div class="lg:col-span-2">
+            <label for="form-costo-kg" class="block text-xs font-semibold text-slate-700">
+              Costo por Kg (MXN)
+            </label>
+            <input
+              id="form-costo-kg"
+              type="number"
+              step="0.01"
+              min="0.1"
+              formControlName="costoPorKg"
+              placeholder="130.00"
+              class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-mono tabular-nums text-slate-900 focus:border-slate-500 focus:outline-none"
+            />
+            @if (recordForm.controls.costoPorKg.touched && recordForm.controls.costoPorKg.invalid) {
+              <p class="mt-1 text-xs text-red-600">Costo mayor a 0.</p>
+            }
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap items-center gap-4 text-xs">
+            <div class="flex items-center gap-2 text-slate-600">
+              <span>Costo total calculado:</span>
+              <span class="font-mono tabular-nums text-sm font-bold text-slate-900">
+                {{ estimatedTotalCost() | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+              </span>
+            </div>
+            @if (justRegisteredMessage(); as okMsg) {
+              <span class="text-xs font-medium text-emerald-700">{{ okMsg }}</span>
+            }
+          </div>
+
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <mat-icon class="text-[16px]! h-4! w-4! leading-4!">add_circle_outline</mat-icon>
+            <span>Registrar Merma</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-wrap items-center gap-3">
+        <div
+          class="inline-flex items-center gap-1 rounded-lg bg-slate-200/70 p-1"
+          role="group"
+          aria-label="Filtrar por turno"
+        >
+          @for (filter of shiftFilters; track filter) {
+            <button
+              type="button"
+              (click)="selectShiftFilter(filter)"
+              [class]="
+                selectedShift() === filter
+                  ? 'rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-xs transition-colors whitespace-nowrap shrink-0 cursor-pointer'
+                  : 'rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer'
+              "
+            >
+              {{ filter }}
+            </button>
+          }
+        </div>
+
+        <div class="relative w-full sm:w-64">
+          <mat-icon
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px]! h-[18px]! w-[18px]! leading-[18px]! text-slate-400"
+          >
+            search
+          </mat-icon>
+          <input
+            type="text"
+            [formControl]="searchControl"
+            placeholder="Filtrar por línea, motivo o turno..."
+            aria-label="Filtrar por línea, motivo o turno"
+            class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          (click)="openHtmlModal()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+        >
+          <mat-icon class="text-[16px]! h-4! w-4! leading-4!">code</mat-icon>
+          <span>Código HTML</span>
+        </button>
+        <button
+          type="button"
+          (click)="exportCsv()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+        >
+          <mat-icon class="text-[16px]! h-4! w-4! leading-4!">download</mat-icon>
+          <span>Exportar CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div id="grafico-pastel" class="lg:col-span-5">
+        <app-scrap-pie-chart
+          [summaries]="shiftSummaries()"
+          [selectedShift]="selectedShift()"
+          (shiftSelected)="selectShiftFilter($event)"
+        />
+      </div>
+
+      <div
+        id="tabla-resumen"
+        class="lg:col-span-7 flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden"
+      >
+        <div class="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-100/70 px-6 py-4">
+          <h2 class="text-sm font-bold tracking-wider text-slate-900 uppercase">
+            TABLA RESUMEN
+          </h2>
+          <span class="font-mono tabular-nums text-xs text-slate-500">
+            {{ filteredRecords().length }} registros
+          </span>
+        </div>
+
+        @if (filteredRecords().length > 0) {
+          <div class="flex-1 overflow-x-auto">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  <th scope="col" class="px-6 py-3">Turno</th>
+                  <th scope="col" class="px-6 py-3">Línea y Defecto</th>
+                  <th scope="col" class="px-6 py-3 text-right">Kg</th>
+                  <th scope="col" class="px-6 py-3 text-right">Costo</th>
+                  <th scope="col" class="px-4 py-3 text-right">
+                    <span class="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200">
+                @for (row of filteredRecords(); track row.id) {
+                  <tr class="hover:bg-slate-50/90 transition-colors">
+                    <td class="px-6 py-3.5 text-sm font-medium text-slate-900 whitespace-nowrap align-top">
+                      <div class="flex items-center gap-2.5">
+                        <span
+                          class="inline-block h-2.5 w-2.5 rounded-xs shrink-0"
+                          [style.background-color]="getShiftColor(row.turno)"
+                        ></span>
+                        <span>{{ row.turno }}</span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-3.5 align-top">
+                      <p class="text-sm font-medium text-slate-900">{{ row.linea }}</p>
+                      <p class="mt-0.5 text-xs text-slate-500">{{ row.motivo }}</p>
+                    </td>
+                    <td class="px-6 py-3.5 text-sm font-mono tabular-nums text-right text-slate-700 whitespace-nowrap align-top">
+                      {{ row.kg | number: '1.1-1' }} kg
+                    </td>
+                    <td class="px-6 py-3.5 text-right whitespace-nowrap align-top">
+                      <p class="text-sm font-mono tabular-nums font-semibold text-slate-900">
+                        {{ row.costo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                      </p>
+                      <p class="mt-0.5 text-xs font-mono tabular-nums text-slate-400">
+                        {{ row.costoPorKg | currency: 'MXN' : 'symbol-narrow' : '1.0-0' }}/kg
+                      </p>
+                    </td>
+                    <td class="px-4 py-3.5 text-right whitespace-nowrap align-top">
+                      <button
+                        type="button"
+                        (click)="removeRecord(row.id)"
+                        [attr.aria-label]="'Eliminar registro de ' + row.linea"
+                        class="inline-flex items-center justify-center rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600 transition-colors cursor-pointer"
+                      >
+                        <mat-icon class="text-[18px]! h-[18px]! w-[18px]! leading-[18px]!">
+                          delete_outline
+                        </mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="border-t-2 border-slate-200 bg-slate-50/80">
+                  <td colspan="2" class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Total filtrado
+                  </td>
+                  <td class="px-6 py-3.5 text-sm font-mono tabular-nums font-bold text-right text-slate-900 whitespace-nowrap">
+                    {{ totalFilteredKg() | number: '1.1-1' }} kg
+                  </td>
+                  <td class="px-6 py-3.5 text-sm font-mono tabular-nums font-bold text-right text-slate-900 whitespace-nowrap">
+                    {{ totalFilteredCosto() | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </td>
+                  <td class="px-4 py-3.5"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        } @else {
+          <div class="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+            <mat-icon class="text-[36px]! h-9! w-9! leading-9! text-slate-300">
+              table_rows
+            </mat-icon>
+            <p class="mt-3 text-sm font-semibold text-slate-800">
+              No hay registros de scrap que coincidan con el filtro
+            </p>
+            <p class="mt-1 text-xs text-slate-500">
+              Restablece los filtros o registra una nueva merma desde el formulario superior.
+            </p>
+            <div class="mt-5 flex items-center gap-3">
+              <button
+                type="button"
+                (click)="resetFilters()"
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Restablecer filtros
+              </button>
+              <button
+                type="button"
+                (click)="focusRegistrationForm()"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <mat-icon class="text-[16px]! h-4! w-4! leading-4!">add</mat-icon>
+                <span>Ir al registro</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    } @else {
+      <app-module-builder />
+    }
+  </main>
+
+  @if (isHtmlModalOpen()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-html-title"
+    >
+      <div class="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-xl border border-slate-200 bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div>
+            <h3 id="modal-html-title" class="text-base font-bold text-slate-900">
+              HTML Limpio con Tailwind CSS
+            </h3>
+            <p class="text-xs text-slate-500">
+              Estructura responsiva generada a partir del wireframe
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="copyHtmlCode()"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer"
+            >
+              <mat-icon class="text-[16px]! h-4! w-4! leading-4!">
+                {{ copiedHtml() ? 'check' : 'content_copy' }}
+              </mat-icon>
+              <span>{{ copiedHtml() ? 'Copiado' : 'Copiar HTML' }}</span>
+            </button>
+            <button
+              type="button"
+              (click)="closeHtmlModal()"
+              aria-label="Cerrar código HTML"
+              class="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+            >
+              <mat-icon class="text-[20px]! h-5! w-5! leading-5!">close</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-auto bg-slate-950 p-5">
+          <pre class="font-mono text-xs leading-relaxed text-slate-100 whitespace-pre-wrap">{{ cleanHtmlSnippet() }}</pre>
+        </div>
+      </div>
+    </div>
+  }
+</div>

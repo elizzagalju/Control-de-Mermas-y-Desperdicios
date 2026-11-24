@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import "tailwindcss";
+
+@source inline("{grid,grid-cols-1,grid-cols-2,grid-cols-3,grid-cols-4,grid-cols-12,md:grid-cols-2,md:grid-cols-3,lg:grid-cols-2,lg:grid-cols-3,lg:grid-cols-12,col-span-1,col-span-2,col-span-3,col-span-4,col-span-5,col-span-6,col-span-7,col-span-8,col-span-12,lg:col-span-4,lg:col-span-5,lg:col-span-6,lg:col-span-7,lg:col-span-8,flex,flex-col,flex-row,flex-wrap,items-center,items-start,items-stretch,justify-between,justify-center,gap-2,gap-3,gap-4,gap-6,p-2,p-3,p-4,p-5,p-6,px-3,px-4,px-6,py-2,py-3,py-4,mb-2,mb-4,mb-6,mt-2,mt-4,mt-6,w-full,max-w-xs,max-w-sm,max-w-md,aspect-square,overflow-x-auto,bg-white,bg-slate-50,bg-slate-100,bg-slate-900,bg-sky-600,bg-emerald-600,bg-amber-500,bg-red-600,text-white,text-slate-500,text-slate-600,text-slate-700,text-slate-800,text-slate-900,text-xs,text-sm,text-base,text-lg,text-xl,text-2xl,font-medium,font-semibold,font-bold,font-mono,tabular-nums,text-left,text-center,text-right,uppercase,tracking-wider,rounded-lg,rounded-xl,border,border-b,border-t,border-slate-200,border-slate-300,divide-y,divide-slate-200,shadow-sm}");
+
+@theme {
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+}

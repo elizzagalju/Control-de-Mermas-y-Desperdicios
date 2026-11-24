@@ -1,0 +1,6 @@
+{
+  "name": "Reporte de Scrap por Turno",
+  "description": "Sistema industrial de control de mermas, kilogramos de scrap y costos operativos por turno y línea de producción.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
